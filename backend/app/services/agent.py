@@ -11,6 +11,13 @@ from app.tools.browser import BrowserTool
 from app.tools.git import GitTool
 from app.tools.web import WebTool
 from app.tools.task import TaskTool
+from app.tools.data_analyst import DataAnalystTool
+from app.tools.deploy import DeployTool
+from app.tools.lsp import LSPTool
+from app.tools.mcp import MCPTool
+from app.tools.thinking import ThinkingTool
+from app.tools.github_api import GitHubAPITool
+from app.tools.screen_recording import ScreenRecordingTool
 from app.models.session import MessageRole
 
 
@@ -25,7 +32,7 @@ class AgentService:
         self.llm = llm_service
         self.sessions = session_service
 
-        # Initialize tools
+        # Initialize core tools
         self.bash_tool = BashTool()
         self.file_tool = FileOpsTool()
         self.search_tool = SearchTool()
@@ -33,6 +40,15 @@ class AgentService:
         self.git_tool = GitTool()
         self.web_tool = WebTool()
         self.task_tool = TaskTool()
+
+        # Initialize advanced tools
+        self.data_analyst_tool = DataAnalystTool()
+        self.deploy_tool = DeployTool()
+        self.lsp_tool = LSPTool()
+        self.mcp_tool = MCPTool()
+        self.thinking_tool = ThinkingTool()
+        self.github_api_tool = GitHubAPITool()
+        self.screen_recording_tool = ScreenRecordingTool()
 
     async def process_message(
         self,
@@ -195,11 +211,85 @@ class AgentService:
                 }
 
             elif tool_name == "think":
-                # Just record the thought
-                return {
-                    "success": True,
-                    "thought": args.get("thought", ""),
-                }
+                # Record the thought using thinking tool
+                return await self.thinking_tool.execute(
+                    thought=args.get("thought", ""),
+                    session_id=session_id,
+                    category=args.get("category"),
+                )
+
+            # Data Analyst tools
+            elif tool_name == "data_analyst":
+                operation = args.pop("operation", "analyze")
+                return await self.data_analyst_tool.execute(operation=operation, **args)
+
+            # Deploy tools
+            elif tool_name == "deploy":
+                operation = args.pop("operation", "status")
+                return await self.deploy_tool.execute(operation=operation, **args)
+
+            # LSP tools
+            elif tool_name == "lsp_tool":
+                operation = args.pop("operation", "get_diagnostics")
+                return await self.lsp_tool.execute(operation=operation, **args)
+
+            elif tool_name == "goto_definition":
+                return await self.lsp_tool.execute(operation="goto_definition", **args)
+
+            elif tool_name == "find_references":
+                return await self.lsp_tool.execute(operation="find_references", **args)
+
+            elif tool_name == "hover_symbol":
+                return await self.lsp_tool.execute(operation="hover_symbol", **args)
+
+            elif tool_name == "get_diagnostics":
+                return await self.lsp_tool.execute(operation="get_diagnostics", **args)
+
+            # MCP tools
+            elif tool_name == "mcp_tool":
+                operation = args.pop("operation", "list_servers")
+                return await self.mcp_tool.execute(operation=operation, **args)
+
+            elif tool_name == "mcp_list_servers":
+                return await self.mcp_tool.execute(operation="list_servers", **args)
+
+            elif tool_name == "mcp_list_tools":
+                return await self.mcp_tool.execute(operation="list_tools", **args)
+
+            elif tool_name == "mcp_call_tool":
+                return await self.mcp_tool.execute(operation="call_tool", **args)
+
+            # GitHub API tools
+            elif tool_name == "github_api":
+                operation = args.pop("operation", "list_repos")
+                return await self.github_api_tool.execute(operation=operation, **args)
+
+            elif tool_name == "git_create_pr":
+                return await self.github_api_tool.execute(operation="create_pr", **args)
+
+            elif tool_name == "git_view_pr":
+                return await self.github_api_tool.execute(operation="view_pr", **args)
+
+            elif tool_name == "git_pr_checks":
+                return await self.github_api_tool.execute(operation="pr_checks", **args)
+
+            elif tool_name == "git_comment_on_pr":
+                return await self.github_api_tool.execute(operation="comment_on_pr", **args)
+
+            elif tool_name == "git_ci_job_logs":
+                return await self.github_api_tool.execute(operation="ci_job_logs", **args)
+
+            # Screen recording tools
+            elif tool_name == "recording_start":
+                return await self.screen_recording_tool.execute(
+                    operation="start", session_id=session_id, **args
+                )
+
+            elif tool_name == "recording_stop":
+                return await self.screen_recording_tool.execute(operation="stop", **args)
+
+            elif tool_name == "screenshot":
+                return await self.screen_recording_tool.execute(operation="screenshot", **args)
 
             else:
                 return {"error": f"Unknown tool: {tool_name}"}
