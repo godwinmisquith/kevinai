@@ -12,6 +12,7 @@ from app.tools.lsp import LSPTool
 from app.tools.mcp import MCPTool
 from app.tools.thinking import ThinkingTool
 from app.tools.github_api import GitHubAPITool
+from app.tools.screen_recording import ScreenRecordingTool
 
 __all__ = [
     "BashTool",
@@ -27,4 +28,5 @@ __all__ = [
     "MCPTool",
     "ThinkingTool",
     "GitHubAPITool",
+    "ScreenRecordingTool",
 ]
