@@ -5,3 +5,7 @@ export { FileExplorer } from './FileExplorer';
 export { Terminal } from './Terminal';
 export { BrowserPreview } from './BrowserPreview';
 export { TodoPanel } from './TodoPanel';
+export { AppHeader } from './AppHeader';
+export { SessionSidebar } from './SessionSidebar';
+export { LandingPage } from './LandingPage';
+export { WorkspaceView } from './WorkspaceView';

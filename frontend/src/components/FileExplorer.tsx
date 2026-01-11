@@ -140,9 +140,29 @@ export function FileExplorer({ sessionId }: FileExplorerProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sessionId) {
-      loadDirectory(rootPath);
-    }
+    const loadDir = async () => {
+      if (!sessionId) return;
+
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await api.listDirectory(sessionId, rootPath);
+        if (result.entries) {
+          setEntries(result.entries);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load directory');
+        setEntries([
+          { name: 'src', type: 'directory', path: `${rootPath}/src` },
+          { name: 'package.json', type: 'file', path: `${rootPath}/package.json`, size: 1024 },
+          { name: 'README.md', type: 'file', path: `${rootPath}/README.md`, size: 2048 },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDir();
   }, [sessionId, rootPath]);
 
   const loadDirectory = async (path: string) => {
@@ -157,7 +177,6 @@ export function FileExplorer({ sessionId }: FileExplorerProps) {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load directory');
-      // Set some demo entries for display
       setEntries([
         { name: 'src', type: 'directory', path: `${path}/src` },
         { name: 'package.json', type: 'file', path: `${path}/package.json`, size: 1024 },

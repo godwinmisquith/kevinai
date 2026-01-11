@@ -6,6 +6,11 @@ from app.tools.browser import BrowserTool
 from app.tools.git import GitTool
 from app.tools.web import WebTool
 from app.tools.task import TaskTool
+from app.tools.data_analyst import DataAnalystTool
+from app.tools.deploy import DeployTool
+from app.tools.lsp import LSPTool
+from app.tools.mcp import MCPTool
+from app.tools.thinking import ThinkingTool
 
 __all__ = [
     "BashTool",
@@ -15,4 +20,9 @@ __all__ = [
     "GitTool",
     "WebTool",
     "TaskTool",
+    "DataAnalystTool",
+    "DeployTool",
+    "LSPTool",
+    "MCPTool",
+    "ThinkingTool",
 ]
