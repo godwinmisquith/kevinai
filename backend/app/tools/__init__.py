@@ -11,6 +11,7 @@ from app.tools.deploy import DeployTool
 from app.tools.lsp import LSPTool
 from app.tools.mcp import MCPTool
 from app.tools.thinking import ThinkingTool
+from app.tools.github_api import GitHubAPITool
 
 __all__ = [
     "BashTool",
@@ -25,4 +26,5 @@ __all__ = [
     "LSPTool",
     "MCPTool",
     "ThinkingTool",
+    "GitHubAPITool",
 ]
