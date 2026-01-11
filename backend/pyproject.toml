@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "kevin-ai"
+version = "0.1.0"
+description = "Kevin AI - Virtual AI Software Engineer"
+authors = ["Kevin AI Team"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.109.0"
+uvicorn = {extras = ["standard"], version = "^0.27.0"}
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+python-dotenv = "^1.0.0"
+openai = "^1.12.0"
+anthropic = "^0.18.0"
+httpx = "^0.26.0"
+websockets = "^12.0"
+aiosqlite = "^0.19.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.25"}
+python-multipart = "^0.0.9"
+playwright = "^1.41.0"
+gitpython = "^3.1.41"
+aiofiles = "^23.2.1"
+psutil = "^5.9.8"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+black = "^24.1.0"
+ruff = "^0.2.0"
+mypy = "^1.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
