@@ -19,6 +19,7 @@ from app.tools.thinking import ThinkingTool
 from app.tools.github_api import GitHubAPITool
 from app.tools.screen_recording import ScreenRecordingTool
 from app.tools.code_validator import CodeValidatorTool
+from app.tools.knowledge import KnowledgeTool
 from app.models.session import MessageRole
 
 
@@ -51,6 +52,7 @@ class AgentService:
         self.github_api_tool = GitHubAPITool()
         self.screen_recording_tool = ScreenRecordingTool()
         self.code_validator_tool = CodeValidatorTool()
+        self.knowledge_tool = KnowledgeTool()
 
     async def process_message(
         self,
