@@ -4,6 +4,7 @@ import json
 from typing import Any, Dict, List, Optional, AsyncGenerator
 from app.config import settings
 from app.models.tool import TOOL_DEFINITIONS
+from app.services.model_router import model_router, ModelTier
 
 
 class LLMService:
@@ -12,6 +13,7 @@ class LLMService:
     def __init__(self):
         self.openai_client = None
         self.anthropic_client = None
+        self.model_router = model_router
         self._init_clients()
 
     def _init_clients(self) -> None:
@@ -69,29 +71,63 @@ Be concise in your responses. Focus on actions and results rather than explanati
         tools: Optional[List[Dict[str, Any]]] = None,
         model: Optional[str] = None,
         stream: bool = False,
+        session_id: Optional[str] = None,
+        force_tier: Optional[ModelTier] = None,
+        context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Get a chat completion from the LLM."""
-        model = model or settings.default_model
+        """Get a chat completion from the LLM with intelligent model routing."""
         tools = tools or TOOL_DEFINITIONS
+
+        # Get the last user message for task classification
+        last_user_message = ""
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                last_user_message = msg.get("content", "")
+                break
+
+        # Use model router to select appropriate model if not specified
+        if model is None:
+            selected_model, tier, category = self.model_router.select_model(
+                message=last_user_message,
+                context=context,
+                force_tier=force_tier,
+            )
+            model = selected_model
+            max_tokens = self.model_router.get_max_tokens_for_tier(tier)
+        else:
+            max_tokens = settings.max_tokens
 
         # Add system prompt if not present
         if not messages or messages[0].get("role") != "system":
             messages = [{"role": "system", "content": self.get_system_prompt()}] + messages
 
         if self.openai_client and "gpt" in model.lower():
-            return await self._openai_completion(messages, tools, model, stream)
+            result = await self._openai_completion(messages, tools, model, stream, max_tokens)
         elif self.anthropic_client and "claude" in model.lower():
-            return await self._anthropic_completion(messages, tools, model, stream)
+            result = await self._anthropic_completion(messages, tools, model, stream, max_tokens)
         else:
             # Fallback to mock response for demo
-            return self._mock_completion(messages)
+            result = self._mock_completion(messages)
+
+        # Track usage if session_id provided and cost tracking enabled
+        if session_id and settings.enable_cost_tracking:
+            input_tokens = result.get("usage", {}).get("input_tokens", 0)
+            output_tokens = result.get("usage", {}).get("output_tokens", 0)
+            if input_tokens or output_tokens:
+                self.model_router.track_usage(session_id, model, input_tokens, output_tokens)
+
+        # Add model info to result
+        result["model_used"] = model
+
+        return result
 
     async def _openai_completion(
         self,
         messages: List[Dict[str, Any]],
         tools: List[Dict[str, Any]],
         model: str,
-        stream: bool,
+        _stream: bool,
+        max_tokens: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Get completion from OpenAI."""
         try:
@@ -100,7 +136,7 @@ Be concise in your responses. Focus on actions and results rather than explanati
                 messages=messages,
                 tools=tools,
                 tool_choice="auto",
-                max_tokens=settings.max_tokens,
+                max_tokens=max_tokens or settings.max_tokens,
                 temperature=settings.temperature,
             )
 
@@ -124,6 +160,14 @@ Be concise in your responses. Focus on actions and results rather than explanati
                     for tc in message.tool_calls
                 ]
 
+            # Add usage information for cost tracking
+            if response.usage:
+                result["usage"] = {
+                    "input_tokens": response.usage.prompt_tokens,
+                    "output_tokens": response.usage.completion_tokens,
+                    "total_tokens": response.usage.total_tokens,
+                }
+
             return result
         except Exception as e:
             return {"role": "assistant", "content": f"Error: {str(e)}"}
@@ -133,7 +177,8 @@ Be concise in your responses. Focus on actions and results rather than explanati
         messages: List[Dict[str, Any]],
         tools: List[Dict[str, Any]],
         model: str,
-        stream: bool,
+        _stream: bool,
+        max_tokens: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Get completion from Anthropic."""
         try:
@@ -161,7 +206,7 @@ Be concise in your responses. Focus on actions and results rather than explanati
 
             response = await self.anthropic_client.messages.create(
                 model=model,
-                max_tokens=settings.max_tokens,
+                max_tokens=max_tokens or settings.max_tokens,
                 system=system_content,
                 messages=chat_messages,
                 tools=anthropic_tools,
@@ -188,6 +233,14 @@ Be concise in your responses. Focus on actions and results rather than explanati
 
             if tool_calls:
                 result["tool_calls"] = tool_calls
+
+            # Add usage information for cost tracking
+            if response.usage:
+                result["usage"] = {
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                }
 
             return result
         except Exception as e:
