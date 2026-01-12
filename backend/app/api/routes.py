@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.services.llm import LLMService
 from app.services.session import SessionService
 from app.services.agent import AgentService
+from app.services.model_router import model_router, ModelTier
 
 router = APIRouter()
 
@@ -38,6 +39,17 @@ class UpdateTodosRequest(BaseModel):
 class ToolExecuteRequest(BaseModel):
     tool_name: str
     args: Dict[str, Any]
+
+
+class ChatWithModelRequest(BaseModel):
+    message: str
+    model: Optional[str] = None
+    force_tier: Optional[str] = None
+
+
+class CostEstimateRequest(BaseModel):
+    message: str
+    estimated_output_tokens: int = 500
 
 
 # Session endpoints
@@ -247,6 +259,114 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         pass
     except Exception as e:
         await websocket.send_json({"type": "error", "message": str(e)})
+
+
+# Cost tracking endpoints
+@router.get("/costs")
+async def get_all_costs() -> Dict[str, Any]:
+    """Get cost summary across all sessions."""
+    return model_router.get_all_costs()
+
+
+@router.get("/sessions/{session_id}/costs")
+async def get_session_costs(session_id: str) -> Dict[str, Any]:
+    """Get cost summary for a specific session."""
+    session = session_service.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return model_router.get_session_costs(session_id)
+
+
+@router.post("/costs/estimate")
+async def estimate_cost(request: CostEstimateRequest) -> Dict[str, Any]:
+    """Estimate cost for a message before sending."""
+    return model_router.estimate_cost(
+        message=request.message,
+        estimated_output_tokens=request.estimated_output_tokens,
+    )
+
+
+@router.get("/models")
+async def list_models() -> Dict[str, Any]:
+    """List available models and their tiers."""
+    from app.config import settings
+
+    return {
+        "tiers": {
+            "fast": {
+                "description": "For simple tasks (file reads, basic queries, formatting)",
+                "openai": settings.fast_model_openai,
+                "anthropic": settings.fast_model_anthropic,
+                "max_tokens": settings.fast_model_max_tokens,
+            },
+            "standard": {
+                "description": "For most coding tasks and analysis",
+                "openai": settings.standard_model_openai,
+                "anthropic": settings.standard_model_anthropic,
+                "max_tokens": settings.standard_model_max_tokens,
+            },
+            "premium": {
+                "description": "For complex reasoning and architecture",
+                "openai": settings.premium_model_openai,
+                "anthropic": settings.premium_model_anthropic,
+                "max_tokens": settings.premium_model_max_tokens,
+            },
+        },
+        "default_model": settings.default_model,
+        "cost_tracking_enabled": settings.enable_cost_tracking,
+        "model_costs": settings.model_costs,
+    }
+
+
+@router.post("/sessions/{session_id}/chat/advanced")
+async def chat_with_model_selection(
+    session_id: str, request: ChatWithModelRequest
+) -> Dict[str, Any]:
+    """Send a message with explicit model/tier selection."""
+    session = session_service.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Convert tier string to enum if provided
+    force_tier = None
+    if request.force_tier:
+        tier_map = {
+            "fast": ModelTier.FAST,
+            "standard": ModelTier.STANDARD,
+            "premium": ModelTier.PREMIUM,
+        }
+        force_tier = tier_map.get(request.force_tier.lower())
+
+    # Get conversation history
+    history = session_service.get_conversation_history(session_id)
+
+    # Add user message
+    from app.models.session import MessageRole
+    session_service.add_message(session_id, MessageRole.USER, request.message)
+    history.append({"role": "user", "content": request.message})
+
+    # Get LLM response with model selection
+    result = await llm_service.chat_completion(
+        messages=history,
+        model=request.model,
+        session_id=session_id,
+        force_tier=force_tier,
+    )
+
+    # Add assistant response
+    session_service.add_message(
+        session_id,
+        MessageRole.ASSISTANT,
+        result.get("content", ""),
+        tool_calls=result.get("tool_calls"),
+    )
+
+    return {
+        "message": result.get("content", ""),
+        "model_used": result.get("model_used"),
+        "usage": result.get("usage"),
+        "tool_calls": result.get("tool_calls"),
+    }
 
 
 # Health check
