@@ -1,10 +1,11 @@
-import { Bot, ChevronDown } from 'lucide-react';
+import { Bot, ChevronDown, Settings, Puzzle } from 'lucide-react';
 
 interface AppHeaderProps {
   userName?: string;
   agentMode: 'agent' | 'ask';
   onAgentModeChange: (mode: 'agent' | 'ask') => void;
   isConnected: boolean;
+  onOpenMCPMarketplace?: () => void;
 }
 
 export function AppHeader({
@@ -12,6 +13,7 @@ export function AppHeader({
   agentMode,
   onAgentModeChange,
   isConnected,
+  onOpenMCPMarketplace,
 }: AppHeaderProps) {
   return (
     <header className="h-12 bg-kevin-bg border-b border-kevin-primary flex items-center justify-between px-4">
@@ -48,15 +50,35 @@ export function AppHeader({
           </button>
         </div>
 
-        <div className="ml-4 flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              isConnected ? 'bg-green-500' : 'bg-red-500'
-            }`}
-          />
-          <span className="text-xs text-kevin-muted">
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </span>
+        <div className="ml-4 flex items-center gap-4">
+          {onOpenMCPMarketplace && (
+            <button
+              onClick={onOpenMCPMarketplace}
+              className="flex items-center gap-2 px-3 py-1.5 bg-kevin-surface rounded-lg text-sm text-kevin-muted hover:text-kevin-text hover:bg-kevin-primary transition-colors"
+              title="MCP Marketplace"
+            >
+              <Puzzle className="w-4 h-4" />
+              <span>MCPs</span>
+            </button>
+          )}
+
+          <button
+            className="p-2 text-kevin-muted hover:text-kevin-text transition-colors"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-500' : 'bg-red-500'
+              }`}
+            />
+            <span className="text-xs text-kevin-muted">
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
         </div>
       </div>
     </header>

@@ -9,3 +9,4 @@ export { AppHeader } from './AppHeader';
 export { SessionSidebar } from './SessionSidebar';
 export { LandingPage } from './LandingPage';
 export { WorkspaceView } from './WorkspaceView';
+export { MCPMarketplace } from './MCPMarketplace';

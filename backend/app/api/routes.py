@@ -369,6 +369,164 @@ async def chat_with_model_selection(
     }
 
 
+# MCP Marketplace endpoints
+@router.get("/mcp/marketplace")
+async def mcp_marketplace_list(
+    category: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 20,
+) -> Dict[str, Any]:
+    """List all MCP servers in the marketplace."""
+    result = await agent_service.mcp_tool.execute(
+        command="marketplace_list",
+        category=category,
+        page=page,
+        per_page=per_page,
+    )
+    return result
+
+
+@router.get("/mcp/marketplace/search")
+async def mcp_marketplace_search(query: str) -> Dict[str, Any]:
+    """Search the MCP marketplace."""
+    result = await agent_service.mcp_tool.execute(
+        command="marketplace_search",
+        query=query,
+    )
+    return result
+
+
+@router.get("/mcp/marketplace/categories")
+async def mcp_marketplace_categories() -> Dict[str, Any]:
+    """List all MCP marketplace categories."""
+    result = await agent_service.mcp_tool.execute(command="marketplace_categories")
+    return result
+
+
+@router.get("/mcp/marketplace/featured")
+async def mcp_marketplace_featured() -> Dict[str, Any]:
+    """Get featured MCP servers."""
+    result = await agent_service.mcp_tool.execute(command="marketplace_featured")
+    return result
+
+
+@router.get("/mcp/marketplace/{server_id}")
+async def mcp_marketplace_get(server_id: str) -> Dict[str, Any]:
+    """Get details of a specific MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="marketplace_get",
+        server_id=server_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+class MCPInstallRequest(BaseModel):
+    config: Optional[Dict[str, Any]] = None
+
+
+@router.post("/mcp/servers/{server_id}/install")
+async def mcp_install_server(
+    server_id: str,
+    request: MCPInstallRequest = MCPInstallRequest(),
+) -> Dict[str, Any]:
+    """Install an MCP server from the marketplace."""
+    result = await agent_service.mcp_tool.execute(
+        command="install",
+        server_id=server_id,
+        config=request.config,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.delete("/mcp/servers/{server_id}")
+async def mcp_uninstall_server(server_id: str) -> Dict[str, Any]:
+    """Uninstall an MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="uninstall",
+        server_id=server_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+class MCPConfigureRequest(BaseModel):
+    config: Dict[str, Any]
+
+
+@router.put("/mcp/servers/{server_id}/configure")
+async def mcp_configure_server(
+    server_id: str,
+    request: MCPConfigureRequest,
+) -> Dict[str, Any]:
+    """Configure an installed MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="configure",
+        server_id=server_id,
+        config=request.config,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.get("/mcp/servers/{server_id}/config")
+async def mcp_get_server_config(server_id: str) -> Dict[str, Any]:
+    """Get configuration for an installed MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="get_config",
+        server_id=server_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.get("/mcp/servers")
+async def mcp_list_installed() -> Dict[str, Any]:
+    """List all installed MCP servers."""
+    result = await agent_service.mcp_tool.execute(command="list_installed")
+    return result
+
+
+@router.get("/mcp/servers/{server_id}/tools")
+async def mcp_list_tools(server_id: str) -> Dict[str, Any]:
+    """List tools available on an MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="list_tools",
+        server=server_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.post("/mcp/servers/{server_id}/connect")
+async def mcp_connect_server(server_id: str) -> Dict[str, Any]:
+    """Connect to an MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="connect",
+        server=server_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.post("/mcp/servers/{server_id}/disconnect")
+async def mcp_disconnect_server(server_id: str) -> Dict[str, Any]:
+    """Disconnect from an MCP server."""
+    result = await agent_service.mcp_tool.execute(
+        command="disconnect",
+        server=server_id,
+    )
+    return result
+
+
 # Health check
 @router.get("/health")
 async def health_check() -> Dict[str, str]:
