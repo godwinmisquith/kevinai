@@ -527,6 +527,221 @@ async def mcp_disconnect_server(server_id: str) -> Dict[str, Any]:
     return result
 
 
+# Knowledge endpoints
+class KnowledgeCreateRequest(BaseModel):
+    title: str
+    trigger_description: str
+    content: str
+    scope: str = "no_repos"
+    pinned_repos: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+
+
+class KnowledgeUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    trigger_description: Optional[str] = None
+    content: Optional[str] = None
+    scope: Optional[str] = None
+    pinned_repos: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class KnowledgeSuggestRequest(BaseModel):
+    title: str
+    trigger_description: str
+    content: str
+    suggested_scope: str = "no_repos"
+    suggested_repos: Optional[List[str]] = None
+    source_session_id: str = ""
+    source_message: str = ""
+
+
+@router.get("/knowledge")
+async def list_knowledge(
+    page: int = 1,
+    per_page: int = 20,
+) -> Dict[str, Any]:
+    """List all knowledge entries."""
+    result = await agent_service.knowledge_tool.execute(
+        command="list",
+        page=page,
+        per_page=per_page,
+    )
+    return result
+
+
+@router.get("/knowledge/search")
+async def search_knowledge(query: str) -> Dict[str, Any]:
+    """Search knowledge entries."""
+    result = await agent_service.knowledge_tool.execute(
+        command="search",
+        query=query,
+    )
+    return result
+
+
+@router.get("/knowledge/tags")
+async def get_knowledge_tags() -> Dict[str, Any]:
+    """Get all available knowledge tags."""
+    result = await agent_service.knowledge_tool.execute(command="get_tags")
+    return result
+
+
+@router.get("/knowledge/relevant")
+async def get_relevant_knowledge(
+    context: str,
+    repo: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Get knowledge relevant to a context."""
+    result = await agent_service.knowledge_tool.execute(
+        command="get_relevant",
+        context=context,
+        repo=repo,
+    )
+    return result
+
+
+@router.get("/knowledge/repo/{repo}")
+async def get_knowledge_by_repo(repo: str) -> Dict[str, Any]:
+    """Get knowledge for a specific repository."""
+    result = await agent_service.knowledge_tool.execute(
+        command="get_by_repo",
+        repo=repo,
+    )
+    return result
+
+
+@router.get("/knowledge/tag/{tag}")
+async def get_knowledge_by_tag(tag: str) -> Dict[str, Any]:
+    """Get knowledge by tag."""
+    result = await agent_service.knowledge_tool.execute(
+        command="get_by_tag",
+        tag=tag,
+    )
+    return result
+
+
+@router.get("/knowledge/{entry_id}")
+async def get_knowledge(entry_id: str) -> Dict[str, Any]:
+    """Get a specific knowledge entry."""
+    result = await agent_service.knowledge_tool.execute(
+        command="get",
+        entry_id=entry_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.post("/knowledge")
+async def create_knowledge(request: KnowledgeCreateRequest) -> Dict[str, Any]:
+    """Create a new knowledge entry."""
+    result = await agent_service.knowledge_tool.execute(
+        command="create",
+        title=request.title,
+        trigger_description=request.trigger_description,
+        content=request.content,
+        scope=request.scope,
+        pinned_repos=request.pinned_repos,
+        tags=request.tags,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.put("/knowledge/{entry_id}")
+async def update_knowledge(
+    entry_id: str,
+    request: KnowledgeUpdateRequest,
+) -> Dict[str, Any]:
+    """Update a knowledge entry."""
+    result = await agent_service.knowledge_tool.execute(
+        command="update",
+        entry_id=entry_id,
+        title=request.title,
+        trigger_description=request.trigger_description,
+        content=request.content,
+        scope=request.scope,
+        pinned_repos=request.pinned_repos,
+        tags=request.tags,
+        is_active=request.is_active,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.delete("/knowledge/{entry_id}")
+async def delete_knowledge(entry_id: str) -> Dict[str, Any]:
+    """Delete a knowledge entry."""
+    result = await agent_service.knowledge_tool.execute(
+        command="delete",
+        entry_id=entry_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+# Knowledge suggestions endpoints
+@router.get("/knowledge/suggestions")
+async def list_knowledge_suggestions(
+    status: Optional[str] = None,
+) -> Dict[str, Any]:
+    """List all knowledge suggestions."""
+    result = await agent_service.knowledge_tool.execute(
+        command="list_suggestions",
+        status=status,
+    )
+    return result
+
+
+@router.post("/knowledge/suggestions")
+async def create_knowledge_suggestion(
+    request: KnowledgeSuggestRequest,
+) -> Dict[str, Any]:
+    """Create a knowledge suggestion."""
+    result = await agent_service.knowledge_tool.execute(
+        command="suggest",
+        title=request.title,
+        trigger_description=request.trigger_description,
+        content=request.content,
+        suggested_scope=request.suggested_scope,
+        suggested_repos=request.suggested_repos,
+        source_session_id=request.source_session_id,
+        source_message=request.source_message,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.post("/knowledge/suggestions/{suggestion_id}/accept")
+async def accept_knowledge_suggestion(suggestion_id: str) -> Dict[str, Any]:
+    """Accept a knowledge suggestion."""
+    result = await agent_service.knowledge_tool.execute(
+        command="accept_suggestion",
+        suggestion_id=suggestion_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@router.post("/knowledge/suggestions/{suggestion_id}/dismiss")
+async def dismiss_knowledge_suggestion(suggestion_id: str) -> Dict[str, Any]:
+    """Dismiss a knowledge suggestion."""
+    result = await agent_service.knowledge_tool.execute(
+        command="dismiss_suggestion",
+        suggestion_id=suggestion_id,
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
 # Health check
 @router.get("/health")
 async def health_check() -> Dict[str, str]:

@@ -6,6 +6,7 @@ import { LandingPage } from './components/LandingPage';
 import { WorkspaceView } from './components/WorkspaceView';
 import { AppHeader } from './components/AppHeader';
 import { MCPMarketplace } from './components/MCPMarketplace';
+import { Knowledge } from './components/Knowledge';
 import type { Session } from './types';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
   const [selectedMCPs, setSelectedMCPs] = useState<string[]>([]);
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [showMCPMarketplace, setShowMCPMarketplace] = useState(false);
+  const [showKnowledge, setShowKnowledge] = useState(false);
 
   const {
     session,
@@ -107,6 +109,7 @@ function App() {
         onAgentModeChange={setAgentMode}
         isConnected={isConnected}
         onOpenMCPMarketplace={() => setShowMCPMarketplace(true)}
+        onOpenKnowledge={() => setShowKnowledge(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -142,6 +145,10 @@ function App() {
 
       {showMCPMarketplace && (
         <MCPMarketplace onClose={() => setShowMCPMarketplace(false)} />
+      )}
+
+      {showKnowledge && (
+        <Knowledge onClose={() => setShowKnowledge(false)} />
       )}
     </div>
   );

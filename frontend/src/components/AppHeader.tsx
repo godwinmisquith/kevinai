@@ -1,4 +1,4 @@
-import { Bot, ChevronDown, Settings, Puzzle } from 'lucide-react';
+import { Bot, ChevronDown, Settings, Puzzle, BookOpen } from 'lucide-react';
 
 interface AppHeaderProps {
   userName?: string;
@@ -6,6 +6,7 @@ interface AppHeaderProps {
   onAgentModeChange: (mode: 'agent' | 'ask') => void;
   isConnected: boolean;
   onOpenMCPMarketplace?: () => void;
+  onOpenKnowledge?: () => void;
 }
 
 export function AppHeader({
@@ -14,6 +15,7 @@ export function AppHeader({
   onAgentModeChange,
   isConnected,
   onOpenMCPMarketplace,
+  onOpenKnowledge,
 }: AppHeaderProps) {
   return (
     <header className="h-12 bg-kevin-bg border-b border-kevin-primary flex items-center justify-between px-4">
@@ -51,6 +53,17 @@ export function AppHeader({
         </div>
 
         <div className="ml-4 flex items-center gap-4">
+          {onOpenKnowledge && (
+            <button
+              onClick={onOpenKnowledge}
+              className="flex items-center gap-2 px-3 py-1.5 bg-kevin-surface rounded-lg text-sm text-kevin-muted hover:text-kevin-text hover:bg-kevin-primary transition-colors"
+              title="Knowledge"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Knowledge</span>
+            </button>
+          )}
+
           {onOpenMCPMarketplace && (
             <button
               onClick={onOpenMCPMarketplace}

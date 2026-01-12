@@ -14,6 +14,7 @@ from app.tools.thinking import ThinkingTool
 from app.tools.github_api import GitHubAPITool
 from app.tools.screen_recording import ScreenRecordingTool
 from app.tools.code_validator import CodeValidatorTool
+from app.tools.knowledge import KnowledgeTool
 
 __all__ = [
     "BashTool",
@@ -31,4 +32,5 @@ __all__ = [
     "GitHubAPITool",
     "ScreenRecordingTool",
     "CodeValidatorTool",
+    "KnowledgeTool",
 ]
