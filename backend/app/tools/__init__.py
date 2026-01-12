@@ -13,6 +13,7 @@ from app.tools.mcp import MCPTool
 from app.tools.thinking import ThinkingTool
 from app.tools.github_api import GitHubAPITool
 from app.tools.screen_recording import ScreenRecordingTool
+from app.tools.code_validator import CodeValidatorTool
 
 __all__ = [
     "BashTool",
@@ -29,4 +30,5 @@ __all__ = [
     "ThinkingTool",
     "GitHubAPITool",
     "ScreenRecordingTool",
+    "CodeValidatorTool",
 ]
