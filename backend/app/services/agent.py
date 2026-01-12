@@ -18,6 +18,7 @@ from app.tools.mcp import MCPTool
 from app.tools.thinking import ThinkingTool
 from app.tools.github_api import GitHubAPITool
 from app.tools.screen_recording import ScreenRecordingTool
+from app.tools.code_validator import CodeValidatorTool
 from app.models.session import MessageRole
 
 
@@ -49,6 +50,7 @@ class AgentService:
         self.thinking_tool = ThinkingTool()
         self.github_api_tool = GitHubAPITool()
         self.screen_recording_tool = ScreenRecordingTool()
+        self.code_validator_tool = CodeValidatorTool()
 
     async def process_message(
         self,
@@ -290,6 +292,32 @@ class AgentService:
 
             elif tool_name == "screenshot":
                 return await self.screen_recording_tool.execute(operation="screenshot", **args)
+
+            # Code validation tools
+            elif tool_name == "code_validator":
+                operation = args.pop("operation", "validate_all")
+                return await self.code_validator_tool.execute(operation=operation, **args)
+
+            elif tool_name == "validate_code":
+                return await self.code_validator_tool.execute(operation="validate_all", **args)
+
+            elif tool_name == "lint_code":
+                return await self.code_validator_tool.execute(operation="lint", **args)
+
+            elif tool_name == "type_check":
+                return await self.code_validator_tool.execute(operation="type_check", **args)
+
+            elif tool_name == "run_tests":
+                return await self.code_validator_tool.execute(operation="test", **args)
+
+            elif tool_name == "build_project":
+                return await self.code_validator_tool.execute(operation="build", **args)
+
+            elif tool_name == "detect_project":
+                return await self.code_validator_tool.execute(operation="detect_project", **args)
+
+            elif tool_name == "syntax_check":
+                return await self.code_validator_tool.execute(operation="syntax_check", **args)
 
             else:
                 return {"error": f"Unknown tool: {tool_name}"}
